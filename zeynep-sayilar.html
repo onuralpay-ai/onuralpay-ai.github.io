@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zeynep'in Sayıları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: sıcak, oyuncak gibi, sakin; 5 yaşında bir çocuk için büyük ve net
+   IDEA: renkli ahşap sayı tahtası (montessori yüzlük tahta)
+   PICTURE: 10x10 tahtanın kendisi; oyunda üstte büyük sayı kartı
+   COLOUR and TYPE: krem zemin, her satır ayrı pastel renk, mercan vurgu; Baloo 2
+   LAYOUT: başlık + mod düğmeleri, kart, tahta; telefonda tek sütun */
+:root{color-scheme:light dark;--bg:light-dark(#fff8ec,#1d1830);--ink:light-dark(#2b2440,#f6f0ff);--card:light-dark(#ffffff,#2b2446);--soft:light-dark(#f3e6cf,#3a3158);--acc:#ff6b5b;--ok:#22b07d}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 "Baloo 2",system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:760px;margin:0 auto;padding:14px max(3vw,10px) 40px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+h1{font-size:clamp(26px,6vw,40px);line-height:1.05;margin:0;font-weight:800}
+h1 span{color:var(--acc)}
+.modes{display:flex;background:var(--soft);border-radius:999px;padding:4px}
+.modes button{font:inherit;font-weight:700;font-size:17px;border:0;background:none;color:var(--ink);padding:8px 16px;border-radius:999px;min-height:44px;cursor:pointer}
+.modes button.on{background:var(--acc);color:#fff;box-shadow:0 3px 0 #c9493c}
+.panel{background:var(--card);border-radius:24px;padding:14px;margin-bottom:12px;box-shadow:0 4px 0 var(--soft);display:flex;align-items:center;gap:14px}
+.big{flex:none;width:clamp(96px,26vw,150px);aspect-ratio:1;border-radius:22px;display:grid;place-items:center;font-size:clamp(54px,15vw,92px);font-weight:800;background:var(--b,#ffe08a);color:#2b2440;box-shadow:inset 0 -8px 0 rgba(0,0,0,.08)}
+.big.pop{animation:pop .45s ease}
+.side{flex:1;display:flex;flex-direction:column;gap:8px}
+.word{font-size:clamp(22px,5.5vw,32px);font-weight:700;line-height:1.1}
+.msg{font-size:18px;line-height:1.25;min-height:2.5em}
+.heard{font-size:13px;opacity:.6;min-height:1.2em}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-weight:700;font-size:18px;border:0;border-radius:16px;padding:8px 16px;min-height:48px;cursor:pointer;background:var(--soft);color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.mic{background:var(--acc);color:#fff;font-size:22px;padding:8px 22px;min-height:58px}
+.mic.rec{animation:pulse 1s infinite}
+.stars{margin-left:auto;font-size:22px;font-weight:800}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chips button{font:inherit;font-weight:700;border:2px solid var(--soft);background:var(--card);color:var(--ink);border-radius:999px;padding:4px 14px;min-height:40px;cursor:pointer}
+.chips button.on{border-color:var(--acc);color:var(--acc)}
+.parent{margin-top:10px;background:var(--card);border-radius:16px;padding:8px 12px;font-size:15px}
+.parent summary{cursor:pointer;font-weight:700;min-height:32px}
+.parent .row{margin-top:6px}
+.yes{background:var(--ok);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:clamp(3px,1vw,7px);background:var(--soft);padding:clamp(5px,1.4vw,10px);border-radius:20px}
+.cell{aspect-ratio:1;border:0;border-radius:clamp(7px,1.6vw,12px);font:inherit;font-weight:800;font-size:clamp(14px,4.2vw,28px);color:#2b2440;background:hsl(var(--h) 90% 86%);box-shadow:inset 0 -4px 0 hsl(var(--h) 60% 72%);cursor:pointer;padding:0;display:grid;place-items:center;transition:transform .12s}
+.cell.seen{background:hsl(var(--h) 85% 74%)}
+.cell:active,.cell.tap{transform:scale(.88)}
+.cell.target{outline:4px solid var(--acc);outline-offset:1px;animation:wob 1.4s infinite;z-index:1}
+.cell.done{background:hsl(var(--h) 80% 64%)}
+.cell.done::after{content:"★";position:absolute;font-size:.45em;transform:translate(.9em,-.9em);color:#fff}
+.cell{position:relative}
+.grid.game .cell.off{opacity:.25}
+.cell:focus-visible,.btn:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.note{font-size:14px;opacity:.75;margin-top:14px}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9}
+#fx span{position:absolute;top:-10%;font-size:34px;animation:fall var(--d) ease-in forwards}
+.trophy{position:fixed;inset:0;display:grid;place-items:center;z-index:8;background:rgba(43,36,64,.35)}
+.trophy div{background:var(--card);border-radius:28px;padding:24px 30px;text-align:center;font-size:24px;font-weight:800;animation:pop .5s}
+.trophy b{display:block;font-size:80px;line-height:1}
+[hidden]{display:none!important}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes pulse{50%{box-shadow:0 0 0 12px rgba(255,107,91,.25)}}
+@keyframes wob{50%{transform:scale(1.08)}}
+@keyframes fall{to{transform:translate(var(--x),115vh) rotate(var(--r))}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:520px){.panel{flex-direction:column;align-items:stretch;text-align:center}.big{margin:0 auto}.row{justify-content:center}.stars{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Zeynep'in <span>Sayıları</span></h1>
+    <div class="modes" role="tablist">
+      <button id="mLearn" class="on">👂 Dinle</button>
+      <button id="mGame">🎤 Söyle</button>
+    </div>
+  </header>
+
+  <section id="learn" class="panel">
+    <div class="big" id="lBig">1</div>
+    <div class="side">
+      <div class="word" id="lWord">Bir sayıya dokun!</div>
+      <div class="msg">Dokunduğun sayıyı sesli okurum. 🔊</div>
+    </div>
+  </section>
+
+  <section id="game" hidden>
+    <div class="chips" id="ranges"></div>
+    <div class="panel">
+      <div class="big" id="gBig">?</div>
+      <div class="side">
+        <div class="msg" id="gMsg">Hazır mısın? Mikrofona bas ve sayıyı söyle!</div>
+        <div class="row">
+          <button class="btn mic" id="mic">🎤 Söyle</button>
+          <button class="btn" id="hint">💡 İpucu</button>
+          <button class="btn" id="perm">🎙️ Mikrofon izni</button>
+          <span class="stars">⭐ <span id="score">0</span></span>
+        </div>
+        <div class="heard" id="heard"></div>
+      </div>
+    </div>
+    <details class="parent" id="parent">
+      <summary>Anne / Baba düğmeleri</summary>
+      <div class="row">
+        <button class="btn yes" id="pOk">✓ Doğru söyledi</button>
+        <button class="btn" id="pNo">↻ Tekrar denesin</button>
+        <button class="btn" id="pSkip">⏭ Sonraki</button>
+        <button class="btn" id="pReset">Yıldızları sıfırla</button>
+      </div>
+    </details>
+  </section>
+
+  <main class="grid" id="grid"></main>
+  <p class="note" id="note"></p>
+  <p class="note">🔈 iPhone'da ses gelmiyorsa: yan taraftaki sessiz anahtarını kapatın ve ses düğmesiyle sesi açın. Android'de "Medya" sesini açın.</p>
+</div>
+<div id="fx"></div>
+
+<script>
+{
+const NAME = 'Zeynep';
+const ONES = ['','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
+const TENS = ['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
+const words = n => n === 100 ? 'yüz' : (TENS[Math.floor(n/10)] + ' ' + ONES[n%10]).trim();
+const hue = n => [8,30,48,95,150,175,200,230,265,320][Math.floor((n-1)/10)];
+const $ = id => document.getElementById(id);
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const store = { get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d} },
+                set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+
+/* ---------- Ses (konuşma) ---------- */
+let voice = null;
+const hasTTS = 'speechSynthesis' in window;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  voice = vs.find(v => /^tr/i.test(v.lang)) || null;
+  if (vs.length && !voice) $('note').textContent = '⚠️ Bu cihazda Türkçe ses bulunamadı. Telefon ayarlarından (Metin okuma / Konuşma) Türkçe sesi indirirseniz sayılar Türkçe okunur.';
+}
+if (hasTTS){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+/* Claude sayfa yetenekleri: tarayıcıda dinleme (dictation) ve yedek ses (tts) */
+let cTTS = null, cDict = null, sess = null;
+(async () => {
+  try {
+    if (!window.claude || !claude.use) return;
+    cTTS = await claude.use('tts');
+    if (cTTS && !voice) $('note').textContent = '';
+    cDict = await claude.use('dictation');
+    if (cDict){
+      cDict.onPartial(({text}) => sess && sess.partial(text));
+      cDict.onFinal(({text}) => sess && sess.final(text));
+      cDict.onState(({state}) => { if (state === 'idle' && sess) sess.idle(); });
+    }
+  } catch(e){}
+})();
+
+/* iPhone sessiz modda da ses gelsin: ilk dokunuşta ses oturumunu "oynatma" yap */
+let unlocked = false;
+function unlockAudio(){
+  if (unlocked) return; unlocked = true;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+  try {
+    const sr = 8000, len = sr/2, buf = new ArrayBuffer(44 + len*2), v = new DataView(buf);
+    const w = (o,s) => [...s].forEach((c,i) => v.setUint8(o+i, c.charCodeAt(0)));
+    w(0,'RIFF'); v.setUint32(4,36+len*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true);
+    v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,len*2,true);
+    const a = new Audio(URL.createObjectURL(new Blob([buf], {type:'audio/wav'})));
+    a.loop = true; a.setAttribute('playsinline',''); a.play().catch(() => {}); window.__keepAlive = a;
+  } catch(e){}
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume && ac.resume(); } catch(e){}
+  if (hasTTS){ try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(e){} }
+}
+document.addEventListener('pointerdown', unlockAudio, {capture:true});
+document.addEventListener('click', unlockAudio, {capture:true});
+
+function say(text, cb){
+  if (!voice && cTTS){
+    cTTS.speak(text, {language:'tr', rate:0.9}).catch(() => {}).finally(() => cb && cb());
+    return;
+  }
+  if (!hasTTS){ cb && setTimeout(cb, 600); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'tr-TR'; if (voice) u.voice = voice;
+  u.rate = 0.85; u.pitch = 1.15;
+  let done = false; const fin = () => { if (!done){ done = true; cb && cb(); } };
+  u.onend = fin; u.onerror = fin;
+  setTimeout(fin, 2500 + text.length * 140);
+  speechSynthesis.speak(u);
+}
+
+/* ---------- Küçük ödül melodisi (WebAudio, dosya yok) ---------- */
+let ac = null;
+function chime(good){
+  try{
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = good ? [523,659,784,1047] : [392,349];
+    notes.forEach((f,i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      const t = ac.currentTime + i*0.11;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.32);
+    });
+  }catch(e){}
+}
+
+/* ---------- Tablo ---------- */
+const grid = $('grid');
+grid.innerHTML = Array.from({length:100}, (_,i) => {
+  const n = i+1; return `<button class="cell" style="--h:${hue(n)}" data-n="${n}" aria-label="${words(n)}">${n}</button>`;
+}).join('');
+const cell = n => grid.children[n-1];
+
+let mode = 'learn';
+grid.addEventListener('click', e => {
+  const b = e.target.closest('.cell'); if (!b) return;
+  const n = +b.dataset.n;
+  if (mode === 'learn'){
+    b.classList.add('seen','tap'); setTimeout(() => b.classList.remove('tap'), 150);
+    const big = $('lBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 90% 80%)`);
+    big.classList.remove('pop'); void big.offsetWidth; big.classList.add('pop');
+    $('lWord').textContent = words(n);
+    say(words(n));
+  } else if (n === target){ say(words(n)); }
+});
+
+function setMode(m){
+  mode = m;
+  $('mLearn').classList.toggle('on', m==='learn'); $('mGame').classList.toggle('on', m==='game');
+  $('learn').hidden = m !== 'learn'; $('game').hidden = m !== 'game';
+  grid.classList.toggle('game', m==='game');
+  if (hasTTS) speechSynthesis.cancel();
+  if (m === 'game'){ applyRange(); newRound(true); }
+  else { [...grid.children].forEach(c => c.classList.remove('target','off')); }
+}
+$('mLearn').onclick = () => setMode('learn');
+$('mGame').onclick = () => setMode('game');
+
+/* ---------- Oyun ---------- */
+const RANGES = [10,20,50,100];
+let max = store.get('zMax', 20), score = store.get('zScore', 0), target = 0, tries = 0, recent = [];
+$('score').textContent = score;
+$('ranges').innerHTML = RANGES.map(r => `<button data-r="${r}">1–${r}</button>`).join('');
+$('ranges').onclick = e => { const b = e.target.closest('button'); if (!b) return; max = +b.dataset.r; store.set('zMax', max); applyRange(); newRound(); };
+function applyRange(){
+  [...$('ranges').children].forEach(b => b.classList.toggle('on', +b.dataset.r === max));
+  [...grid.children].forEach((c,i) => c.classList.toggle('off', i+1 > max));
+}
+
+function newRound(first){
+  if (target) cell(target).classList.remove('target');
+  let n; do { n = 1 + Math.floor(Math.random()*max); } while (recent.includes(n) && recent.length < max);
+  recent.push(n); if (recent.length > Math.min(6, max-1)) recent.shift();
+  target = n; tries = 0;
+  const big = $('gBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 90% 80%)`);
+  big.classList.remove('pop'); void big.offsetWidth; big.classList.add('pop');
+  cell(n).classList.add('target');
+  cell(n).scrollIntoView({block:'nearest', behavior:'smooth'});
+  $('heard').textContent = '';
+  setMsg(first ? `Merhaba ${NAME}! Bu hangi sayı? 🎤 düğmesine bas ve söyle.` : 'Bu hangi sayı? 🎤 bas ve söyle!');
+  if (!first) say('Bu hangi sayı?');
+}
+function setMsg(t){ $('gMsg').textContent = t; }
+
+const PRAISE = [`Aferin ${NAME}!`, 'Harikasın!', 'Süpersin!', 'Bravo, çok doğru!', 'Muhteşem!', `Yaşasın ${NAME}!`];
+const CHEER = ['Neredeyse! Bir daha dener misin?', 'Hiç sorun değil, tekrar deneyelim!', 'Güzel deneme! Bir kez daha bak.', 'Sen yaparsın! Bir daha söyle.'];
+
+function correct(){
+  score++; store.set('zScore', score); $('score').textContent = score;
+  cell(target).classList.add('done');
+  chime(true); confetti();
+  const p = pick(PRAISE);
+  setMsg(`${p} ⭐ Bu sayı ${words(target)}.`);
+  const milestone = score % 10 === 0;
+  say(`${p} ${words(target)}!`, () => {
+    if (milestone){ trophy(); }
+    else setTimeout(() => newRound(), 700);
+  });
+}
+function wrong(){
+  tries++; chime(false);
+  if (tries === 1 || tries === 3){
+    const c = pick(CHEER); setMsg(c + ' 💪'); say(c);
+  } else if (tries === 2){
+    const t = `Bu sayı ${words(target)}. Hadi şimdi sen söyle: ${words(target)}!`;
+    setMsg(`Birlikte söyleyelim: “${words(target)}” 🎶 Şimdi sen söyle!`); say(t);
+  } else {
+    setMsg('Bunu sonra yine deneriz. Sıradaki sayıya geçelim! 🌈');
+    say('Bunu sonra yine deneriz. Sıradaki sayıya geçelim!', () => newRound());
+  }
+}
+
+$('hint').onclick = () => {
+  const n = target; let t;
+  if (n > 10 && n < 100 && n % 10) t = `İpucu: ${TENS[Math.floor(n/10)]} ile başlıyor.`;
+  else t = `Dinle: ${words(n)}. Şimdi sen söyle!`;
+  setMsg('💡 ' + t); say(t);
+};
+$('pOk').onclick = correct;
+$('pNo').onclick = wrong;
+$('pSkip').onclick = () => newRound();
+$('pReset').onclick = () => { score = 0; store.set('zScore', 0); $('score').textContent = 0; [...grid.children].forEach(c => c.classList.remove('done')); };
+
+/* ---------- Dinleme (konuşma tanıma) ---------- */
+const MAP = {sifir:0,bir:1,bi:1,iki:2,uc:3,dort:4,bes:5,alti:6,yedi:7,sekiz:8,dokuz:9,on:10,yirmi:20,otuz:30,kirk:40,elli:50,altmis:60,yetmis:70,seksen:80,doksan:90,yuz:100};
+const KEYS = Object.keys(MAP).sort((a,b) => b.length - a.length);
+const norm = s => s.toLocaleLowerCase('tr').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').replace(/[âî]/g, m => m==='â'?'a':'i');
+function parseWord(w){
+  if (/^\d+$/.test(w)) return [+w];
+  const v = []; let i = 0;
+  while (i < w.length){ const k = KEYS.find(k => w.startsWith(k, i)); if (!k) return null; v.push(MAP[k]); i += k.length; }
+  return v;
+}
+const combine = v => v.reduce((t,x) => x === 100 ? (t||1)*100 : t + x, 0);
+function numbersIn(text){
+  const out = new Set(); let run = [];
+  for (const w of norm(text).split(/[^a-z0-9]+/)){
+    if (!w) continue;
+    const v = parseWord(w);
+    if (v) run.push(...v); else if (run.length){ out.add(combine(run)); run = []; }
+  }
+  if (run.length) out.add(combine(run));
+  return out;
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let listening = false;
+function startUI(){ listening = true; $('mic').classList.add('rec'); $('mic').textContent = '👂 Dinliyorum…'; }
+function stopUI(){ listening = false; $('mic').classList.remove('rec'); $('mic').textContent = '🎤 Söyle'; }
+const isDenied = e => /not_granted|not-allowed|NotAllowed|denied/i.test(String((e && (e.code || e.name || e.message)) || e));
+
+$('mic').onclick = () => {
+  if (listening) return;
+  if (hasTTS) speechSynthesis.cancel();
+  if (cTTS) cTTS.stop && cTTS.stop();
+  if (cDict) listenClaude();
+  else if (SR) listenNative();
+  else noMic('Bu görünümde mikrofon kullanılamıyor.');
+};
+
+/* Claude dinleme yeteneği (Chrome tarayıcı sekmesinde) */
+function listenClaude(){
+  let text = '', judged = false;
+  const finish = () => {
+    if (judged) return; judged = true; sess = null; stopUI();
+    if (!text.trim()){ setMsg('Seni duyamadım 🙉 Düğmeye bas ve yüksek sesle söyle!'); return; }
+    $('heard').textContent = 'Duyduğum: ' + text.trim();
+    numbersIn(text).has(target) ? correct() : wrong();
+  };
+  sess = {
+    partial: t => { if (numbersIn(text + ' ' + t).has(target)){ text += ' ' + t; cDict.stop().catch(() => {}); finish(); } },
+    final: t => { text += ' ' + t; cDict.stop().catch(() => {}); },
+    idle: finish
+  };
+  startUI();
+  cDict.start().catch(e => {
+    judged = true; sess = null; stopUI();
+    if (isDenied(e)){ cDict = null; SR ? setMsg('İzin verilmedi. Bir daha 🎤 bas, tarayıcı izni sorsun.') : noMic('Mikrofon izni verilmedi.'); }
+    else setMsg('Mikrofon açılamadı, bir daha 🎤 bas.');
+  });
+  setTimeout(() => { if (!judged && cDict) cDict.stop().catch(() => {}); }, 6000);
+}
+
+/* Tarayıcının kendi konuşma tanıması */
+function listenNative(){
+  let r; try { r = new SR(); } catch(e){ noMic('Mikrofon açılamadı.'); return; }
+  r.lang = 'tr-TR'; r.interimResults = false; r.maxAlternatives = 5; r.continuous = false;
+  let got = false, blocked = false;
+  startUI();
+  r.onresult = e => {
+    got = true;
+    const alts = [...e.results[0]].map(a => a.transcript);
+    $('heard').textContent = 'Duyduğum: ' + alts[0];
+    alts.some(a => numbersIn(a).has(target)) ? correct() : wrong();
+  };
+  r.onerror = e => { if (/not-allowed|service-not-allowed|audio-capture/.test(e.error)){ blocked = true; noMic('Mikrofon izni verilmedi.'); } };
+  r.onend = () => {
+    stopUI();
+    if (!got && !blocked){ setMsg('Seni duyamadım 🙉 Düğmeye bas ve yüksek sesle söyle!'); }
+  };
+  try { r.start(); } catch(e){ listening = false; noMic('Mikrofon açılamadı.'); }
+}
+
+/* Mikrofon izni iste */
+$('perm').onclick = async () => {
+  if (cDict){
+    cDict.start().then(() => cDict.stop().catch(() => {})).then(() => permOk())
+      .catch(e => isDenied(e) ? permNo() : setMsg('İzin penceresi kapandı, bir daha deneyin.'));
+    return;
+  }
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({audio:true});
+    s.getTracks().forEach(t => t.stop()); permOk();
+  } catch(e){ permNo(); }
+};
+function permOk(){ $('perm').hidden = true; setMsg('Mikrofon hazır! 🎤 bas ve sayıyı söyle.'); say('Mikrofon hazır!'); }
+function permNo(){
+  $('parent').open = true;
+  setMsg('Bu görünüm mikrofona izin vermiyor. Sayfayı Chrome veya Safari\'de açın ya da aşağıdaki Anne/Baba düğmelerini kullanın.');
+}
+function noMic(why){
+  listening = false; $('mic').classList.remove('rec'); $('mic').textContent = '🎤 Söyle';
+  $('parent').open = true;
+  setMsg(`${why} Zeynep sayıyı yüksek sesle söylesin, siz aşağıdan “Doğru” ya da “Tekrar” düğmesine basın.`);
+}
+
+/* ---------- Kutlama ---------- */
+function confetti(){
+  const fx = $('fx'), set = ['⭐','🌟','🎉','🎈','💖','✨','🦄'];
+  fx.innerHTML = Array.from({length:26}, () =>
+    `<span style="left:${Math.random()*100}%;--x:${(Math.random()-.5)*200}px;--r:${(Math.random()-.5)*720}deg;--d:${1.4+Math.random()*1.2}s;animation-delay:${Math.random()*.3}s">${pick(set)}</span>`).join('');
+  setTimeout(() => fx.innerHTML = '', 3000);
+}
+function trophy(){
+  const d = document.createElement('div'); d.className = 'trophy';
+  d.innerHTML = `<div><b>🏆</b>${score} yıldız!<br>Sen bir sayı yıldızısın, ${NAME}!</div>`;
+  document.body.appendChild(d); confetti(); chime(true);
+  say(`${score} yıldız oldu! Sen bir sayı yıldızısın ${NAME}!`);
+  d.onclick = () => { d.remove(); newRound(); };
+  setTimeout(() => { if (d.isConnected){ d.remove(); newRound(); } }, 5000);
+}
+}
+</script>
+</body>
+</html>
