@@ -44,11 +44,11 @@ h1 span{color:var(--acc)}
 .parent .row{margin-top:6px}
 .yes{background:var(--ok);color:#fff}
 .grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:clamp(3px,1vw,7px);background:var(--soft);padding:clamp(5px,1.4vw,10px);border-radius:20px}
-.cell{aspect-ratio:1;border:0;border-radius:clamp(7px,1.6vw,12px);font:inherit;font-weight:800;font-size:clamp(14px,4.2vw,28px);color:#2b2440;background:hsl(var(--h) 90% 86%);box-shadow:inset 0 -4px 0 hsl(var(--h) 60% 72%);cursor:pointer;padding:0;display:grid;place-items:center;transition:transform .12s}
-.cell.seen{background:hsl(var(--h) 85% 74%)}
+.cell{aspect-ratio:1;border:0;border-radius:clamp(7px,1.6vw,12px);font:inherit;font-weight:800;font-size:clamp(14px,4.2vw,28px);color:#2b2440;background:hsl(var(--h) 95% 72%);box-shadow:inset 0 -4px 0 hsl(var(--h) 75% 52%);cursor:pointer;padding:0;display:grid;place-items:center;transition:transform .12s}
+.cell.seen{background:hsl(var(--h) 95% 62%)}
 .cell:active,.cell.tap{transform:scale(.88)}
 .cell.target{outline:4px solid var(--acc);outline-offset:1px;animation:wob 1.4s infinite;z-index:1}
-.cell.done{background:hsl(var(--h) 80% 64%)}
+.cell.done{background:hsl(var(--h) 90% 55%)}
 .cell.done::after{content:"★";position:absolute;font-size:.45em;transform:translate(.9em,-.9em);color:#fff}
 .cell{position:relative}
 .grid.game .cell.off{opacity:.25}
@@ -124,7 +124,7 @@ const NAME = 'Zeynep';
 const ONES = ['','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
 const TENS = ['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
 const words = n => n === 100 ? 'yüz' : (TENS[Math.floor(n/10)] + ' ' + ONES[n%10]).trim();
-const hue = n => [8,30,48,95,150,175,200,230,265,320][Math.floor((n-1)/10)];
+const hue = n => [0,25,45,60,110,165,200,228,262,295][Math.floor((n-1)/10)]; // gökkuşağı: kırmızı→turuncu→sarı→yeşil→mavi→mor
 const $ = id => document.getElementById(id);
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const store = { get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d} },
@@ -221,7 +221,7 @@ grid.addEventListener('click', e => {
   const n = +b.dataset.n;
   if (mode === 'learn'){
     b.classList.add('seen','tap'); setTimeout(() => b.classList.remove('tap'), 150);
-    const big = $('lBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 90% 80%)`);
+    const big = $('lBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 95% 72%)`);
     big.classList.remove('pop'); void big.offsetWidth; big.classList.add('pop');
     $('lWord').textContent = words(n);
     say(words(n));
@@ -256,7 +256,7 @@ function newRound(first){
   let n; do { n = 1 + Math.floor(Math.random()*max); } while (recent.includes(n) && recent.length < max);
   recent.push(n); if (recent.length > Math.min(6, max-1)) recent.shift();
   target = n; tries = 0;
-  const big = $('gBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 90% 80%)`);
+  const big = $('gBig'); big.textContent = n; big.style.setProperty('--b', `hsl(${hue(n)} 95% 72%)`);
   big.classList.remove('pop'); void big.offsetWidth; big.classList.add('pop');
   cell(n).classList.add('target');
   cell(n).scrollIntoView({block:'nearest', behavior:'smooth'});
